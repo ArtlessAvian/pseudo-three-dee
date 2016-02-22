@@ -2,6 +2,7 @@ package com.artlessavian.pseudothreedee;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
@@ -12,100 +13,121 @@ import com.badlogic.gdx.math.Vector3;
 
 public class TestTestTestTestTestTest extends ApplicationAdapter
 {
-	PerspectiveCamera linMapping;
-	OrthographicCamera camera;
+	float camTargX = 0;
+	float camTargY = 0;
+
+	final float toRadians = (float)Math.PI/180f;
+
+	float camAngle = 30 * toRadians;
+	float camDistance = 300;
+
+	PerspectiveCamera camera;
+	OrthographicCamera identity; // Never touch identity. It screws everything up
 
 	SpriteBatch batch;
 	BitmapFont font;
 	Texture luukass;
 	Texture tile;
 
-	Vector3 unproj;
+	SpriteWrapperThingy spriteWrapperThingy;
 	
 	@Override
-	public void create () {
+	public void create()
+	{
 		batch = new SpriteBatch();
 		font = new BitmapFont();
 
-		linMapping = new PerspectiveCamera(45, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		linMapping.position.x = 0;
-		linMapping.position.y = -600;
-		linMapping.position.z = 200;
-		linMapping.lookAt(0,0,0);
+		camera = new PerspectiveCamera(45, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
-		linMapping.far = 300000;
-		linMapping.update();
-
-		camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		camera.position.x = camera.viewportWidth/2f;
-		camera.position.y = camera.viewportHeight/2f;
-		camera.update();
+		identity = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
 		luukass = new Texture("Test.png");
 		tile = new Texture("Tile.png");
 
-		unproj = new Vector3(0,0,0);
+		spriteWrapperThingy = new SpriteWrapperThingy();
+
+		for (int i = 0; i < 900; i++)
+		{
+			spriteWrapperThingy.add(new SpriteWrapper(luukass, new Vector3(16*(int)((Math.random()*1200-600)/16), 16*(int)((Math.random()*1200-600)/16), 0)));
+		}
+
+//		for (int y = -300; y <= 300; y += 32)
+//		{
+//			for (int x = -300; x <= 300; x += 32)
+//			{
+//				spriteWrapperThingy.add(new SpriteWrapper(luukass, new Vector3(x, y, 0)));
+//			}
+//		}
 	}
 
 	@Override
 	public void resize(int width, int height)
 	{
-		linMapping.viewportWidth = width;
-		linMapping.viewportHeight = height;
-		linMapping.position.x = 0;
-		linMapping.position.y = -600;
-		linMapping.position.z = 200;
-		linMapping.lookAt(0,0,0);
-
-		linMapping.far = 300000;
-		linMapping.update();
-
 		camera.viewportWidth = width;
 		camera.viewportHeight = height;
-		camera.position.x = camera.viewportWidth/2f;
-		camera.position.y = camera.viewportHeight/2f;
+		camera.position.x = camTargX;
+		camera.position.y = camTargY + camDistance * -(float)Math.cos(camAngle);
+		camera.position.z = 0 + camDistance * (float)Math.sin(camAngle);
+		camera.lookAt(camTargX, camTargY, 0);
+
+		camera.near = 0;
+		camera.far = 300000;
 		camera.update();
+
+		identity.viewportWidth = width;
+		identity.viewportHeight = height;
+		identity.position.x = width / 2f;
+		identity.position.y = height / 2f;
+		identity.update();
 	}
 
 	@Override
-	public void render () {
+	public void render()
+	{
 		Gdx.gl.glClearColor(0.3f, 0.3f, 0.3f, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+		if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+			camTargY += 1;}
+		if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+			camTargX -= 1;}
+		if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+			camTargY -= 1;}
+		if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+			camTargX += 1;}
+		if (Gdx.input.isKeyPressed(Input.Keys.R)) {camAngle = Math.min(90 * toRadians, camAngle + 0.01f);}
+		if (Gdx.input.isKeyPressed(Input.Keys.F)) {camAngle = Math.max(0.00001f, camAngle - 0.01f);}
+		if (Gdx.input.isKeyPressed(Input.Keys.T)) {camDistance = Math.max(0.001f, camDistance - 2);}
+		if (Gdx.input.isKeyPressed(Input.Keys.G)) {camDistance = Math.min(300, camDistance + 2);}
+
+		camera.position.x = camTargX;
+		camera.position.y = camTargY + camDistance * -(float)Math.cos(camAngle);
+		camera.position.z = 0 + camDistance * (float)Math.sin(camAngle);
+		camera.lookAt(camTargX, camTargY, 0);
+
+		camera.update();
+
 		batch.begin();
 
-		batch.setProjectionMatrix(linMapping.combined);
-		for (int y = 300; y >= -300; y -= 100)
-		{
-			for (int x = 300; x >= -300; x -= 100)
-			{
-				batch.draw(tile, x, y, 100, 100);
-				font.draw(batch, x + " " + y, x, y + 30);
-			}
-		}
-
 		batch.setProjectionMatrix(camera.combined);
-		// FPS is bad, but theres only like 900 rectangles going up and down or so
-		for (int y = 300; y >= -300; y -= 10)
+		for (int y = 600; y >= -600; y -= 16)
 		{
-			for (int x = 300; x >= -300; x -= 10)
+			for (int x = 600; x >= -600; x -= 16)
 			{
-				unproj.x = x;
-				unproj.y = y;
-				// omg try something dumb like tan, or any other cyclic function (csc)?
-				unproj.z = 30 + 30 * (float)Math.sin(x/50f + y/75f + Gdx.graphics.getFrameId()/30f);
-				linMapping.project(unproj);
-				batch.draw(luukass, unproj.x, unproj.y);
+				batch.draw(tile, x, y, 16, 16);
 			}
 		}
 
-		font.draw(batch, Gdx.graphics.getFramesPerSecond() + " ", 30, 30);
+		batch.setProjectionMatrix(identity.combined);
+		spriteWrapperThingy.draw(batch, camera);
+
+		font.draw(batch, Gdx.graphics.getFramesPerSecond() + "", 35, identity.viewportHeight - 35);
 
 		batch.end();
 	}
 
 	@Override
-	public void dispose()
+	public void dispose ()
 	{
 		tile.dispose();
 		luukass.dispose();
