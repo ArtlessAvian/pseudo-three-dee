@@ -1,7 +1,7 @@
 package com.artlessavian.pseudothreedee;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -19,7 +19,6 @@ public class BillboardSprite implements Comparable<BillboardSprite>
 	public Vector3 worldPos; // Actually the position of the "feet"
 
 	private static Vector3 helper = new Vector3(0, 0, 0);
-	private static Vector3 helper2 = new Vector3(0, 0, 0);
 
 	public BillboardSprite(Texture sprite, Texture shadow, float width, Vector3 vector3)
 	{
@@ -45,10 +44,9 @@ public class BillboardSprite implements Comparable<BillboardSprite>
 			throw new UnsupportedOperationException("BillboardSprite owners should be the same");
 		}
 
-		Camera camera = owner.camera;
+		PerspectiveCamera camera = owner.camera;
 
 		// This will break with a cam angle pointed straight down.
-		// Then, nothing is comparable :/
 		helper.x = o.worldPos.x - camera.position.x;
 		helper.y = o.worldPos.y - camera.position.y;
 		helper.z = camera.position.z;
@@ -72,6 +70,8 @@ public class BillboardSprite implements Comparable<BillboardSprite>
 			return 0;
 		}
 	}
+
+	private static final float magicNumberScaling = 58 / 48f;
 
 	public void drawSprite(Batch batch)
 	{
@@ -97,10 +97,12 @@ public class BillboardSprite implements Comparable<BillboardSprite>
 		// However, it scales by distance to the feet, which causes odd distortions.
 		float scale = 1 / distance;
 
-		// There's probably some vector quaternion matrix shenanigans that makes this work out.
-		// However, the height seems to work, for any resolution, with the camera resolution as 45 :/
-		// I thought it would be the end all magic number, but nope.
+		// i hate trial and error
+		scale *= 45 / owner.camera.fieldOfView;
 		scale *= (float)Gdx.graphics.getHeight();
+
+		// brute forced number
+		scale *= magicNumberScaling;
 
 		// sprite.setScale actually scales every property, like distance from origin.
 		// oops.
@@ -114,17 +116,6 @@ public class BillboardSprite implements Comparable<BillboardSprite>
 
 		sprite.setCenterX(helper.x);
 		sprite.setY(helper.y);
-
-		if (false) // TODO: Sprites rotate to reflect their z axis
-		{
-//			helper2.x = worldPos.x;
-//			helper2.y = worldPos.y;
-//			helper2.z = worldPos.z + 1;
-//			owner.camera.project(helper2);
-//
-//			sprite.setRotation((float)(Math.atan2(helper2.y - helper.y, helper2.x - helper.x) * 180f/Math.PI) - 90);
-			// Shift the sprites around or something
-		}
 
 		sprite.draw(batch);
 
@@ -141,7 +132,7 @@ public class BillboardSprite implements Comparable<BillboardSprite>
 
 		shadow.setCenter(worldPos.x, worldPos.y);
 		shadow.setSize(this.width, this.width);
-		// Magic formula, the only part that doesnt need tweaking is the type of operation
+		// Needs tweaking.
 		// This assumes that worldPos.z will never be negative though.
 		shadow.setAlpha((float)Math.pow(1 / 2f, 1 / 20f * worldPos.z));
 		shadow.draw(batch);

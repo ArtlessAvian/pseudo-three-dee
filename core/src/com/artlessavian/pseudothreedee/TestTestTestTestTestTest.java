@@ -31,9 +31,10 @@ public class TestTestTestTestTestTest extends ApplicationAdapter
 		batch = new SpriteBatch();
 		font = new BitmapFont();
 
-		camera = new PerspectiveCamera(45, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		camera = new PerspectiveCamera(70, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		fpcc = new FirstPersonCameraController(camera);
-		fpcc.setVelocity(100);
+		fpcc.setVelocity(20);
+		fpcc.setDegreesPerPixel(0.1f);
 		Gdx.input.setInputProcessor(fpcc);
 
 		camera.position.x = 0;
@@ -77,6 +78,10 @@ public class TestTestTestTestTestTest extends ApplicationAdapter
 	public void render()
 	{
 		fpcc.update(Gdx.graphics.getDeltaTime());
+
+		// Annoying bouncy cam
+//		camera.fieldOfView = (float)Math.sin(Gdx.graphics.getFrameId() / 10f) * 30 + 50;
+//		camera.update();
 
 		// Update the positions
 		for (BillboardSprite b : billboards.billboards)
